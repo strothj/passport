@@ -9,6 +9,51 @@ const app = express();
 mongoose.Promise = global.Promise;
 const jsonParser = bodyParser.json();
 
+const passport = require('passport');
+const BasicStrategy = require('passport-http').BasicStrategy;
+
+const strategy = new BasicStrategy((username, password, callback) => {
+  User.findOne({ username }, (err, user) => {
+    if (err) {
+      callback(err);
+      return;
+    }
+
+    if (!user) {
+      callback(null, false, {
+        message: 'Incorrect username.',
+      });
+      return;
+    }
+
+    user.validatePassword(password, (passErr, isValid) => {
+      if (passErr) {
+        callback(passErr);
+        return;
+      }
+
+      if (!isValid) {
+        callback(null, false, {
+          message: 'Incorrect password.',
+        });
+        return;
+      }
+      callback(null, user);
+      return;
+    });
+  });
+});
+
+passport.use(strategy);
+
+app.use(passport.initialize());
+
+app.get('/hidden', passport.authenticate('basic', { session: false }), (req, res) => {
+  res.json({
+    message: 'Luke... I am your father',
+  });
+});
+
 app.post('/users', jsonParser, (req, res) => {
   if (!req.body) {
     res.status(400).json({

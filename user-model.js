@@ -13,6 +13,16 @@ const UserSchema = new mongoose.Schema({
   },
 });
 
+UserSchema.methods.validatePassword = function validatePassword(password, callback) {
+  bcrypt.compare(password, this.password, (err, isValid) => {
+    if (err) {
+      callback(err);
+      return;
+    }
+    callback(null, isValid);
+  });
+};
+
 const User = mongoose.model('User', UserSchema);
 
 module.exports = User;
